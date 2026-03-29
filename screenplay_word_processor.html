@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screenplay Writer</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1e232d;
+      --text: #f3f5f7;
+      --muted: #9ca3af;
+      --accent: #d9dde4;
+      --border: rgba(255,255,255,.09);
+      --shadow: 0 20px 50px rgba(0,0,0,.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #0b0d12 0%, #11151d 100%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .title-wrap {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: .02em;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(23,26,33,.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      padding: 16px;
+      position: sticky;
+      top: 18px;
+      align-self: start;
+    }
+
+    .section + .section { margin-top: 18px; }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: .92rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    button, select, input {
+      font: inherit;
+    }
+
+    .btn, .field, .select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 12px 13px;
+    }
+
+    .btn {
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,.18);
+      background: #232a36;
+    }
+
+    .btn.primary {
+      background: #eceff3;
+      color: #11151d;
+      border-color: transparent;
+    }
+
+    .btn.primary:hover {
+      background: #ffffff;
+    }
+
+    .small {
+      font-size: .86rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .editor-shell {
+      padding: 18px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .toolbar .btn {
+      width: auto;
+      min-width: 52px;
+      text-align: center;
+      padding: 10px 12px;
+    }
+
+    .document-stage {
+      padding: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      overflow: auto;
+    }
+
+    .page {
+      width: 8.5in;
+      min-height: 11in;
+      margin: 0 auto;
+      background: white;
+      color: black;
+      box-shadow: 0 16px 40px rgba(0,0,0,.25);
+      padding: 1in 1in 1in 1.5in;
+      outline: none;
+      font-family: "Courier Prime", "Courier New", monospace;
+      font-size: 12pt;
+      line-height: 1;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+    }
+
+    .page:focus {
+      box-shadow: 0 16px 40px rgba(0,0,0,.25), 0 0 0 3px rgba(17,21,29,.18);
+    }
+
+    .meta-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .document-stage { padding: 10px; }
+      .page { transform-origin: top center; }
+    }
+
+    @media (max-width: 860px) {
+      .app { padding: 10px; }
+      .topbar { grid-template-columns: 1fr; }
+      .page {
+        width: 100%;
+        min-height: 75vh;
+        padding: 48px 28px 48px 42px;
+      }
+      .button-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: white; }
+      .topbar, .sidebar, .toolbar { display: none !important; }
+      .card, .editor-shell, .document-stage { border: none; box-shadow: none; padding: 0; background: white; }
+      .page { box-shadow: none; margin: 0; width: auto; min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title-wrap">
+        <h1>Screenplay Writer</h1>
+        <div class="subtitle">A simple browser-based word processor with Word-compatible export</div>
+      </div>
+      <div>
+        <button class="btn primary" id="exportDocTop">Export .doc</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar card">
+        <div class="section">
+          <h2>Document</h2>
+          <div class="meta-row">
+            <input id="docTitle" class="field" type="text" placeholder="Screenplay title" value="Untitled Screenplay" />
+            <button class="btn primary" id="exportDoc">Export .doc</button>
+            <button class="btn" id="saveLocal">Save in browser</button>
+            <button class="btn" id="loadLocal">Load saved draft</button>
+            <button class="btn" id="downloadTxt">Export .txt</button>
+            <button class="btn" id="printBtn">Print / Save PDF</button>
+          </div>
+          <div class="status" id="status">Ready.</div>
+        </div>
+
+        <div class="section">
+          <h2>Screenplay presets</h2>
+          <div class="button-grid">
+            <button class="btn" data-preset="scene">Scene Heading</button>
+            <button class="btn" data-preset="action">Action</button>
+            <button class="btn" data-preset="character">Character</button>
+            <button class="btn" data-preset="dialogue">Dialogue</button>
+            <button class="btn" data-preset="parenthetical">Parenthetical</button>
+            <button class="btn" data-preset="transition">Transition</button>
+          </div>
+          <p class="small">Place your cursor where you want the new line, then click a preset.</p>
+        </div>
+
+        <div class="section">
+          <h2>Formatting</h2>
+          <div class="button-grid">
+            <button class="btn" id="boldBtn">Bold</button>
+            <button class="btn" id="italicBtn">Italic</button>
+            <button class="btn" id="underlineBtn">Underline</button>
+            <button class="btn" id="clearFormatting">Clear Styles</button>
+          </div>
+          <p class="small">Formatting is optional. Standard screenplays usually stay plain, monospaced, and clean.</p>
+        </div>
+
+        <div class="section">
+          <h2>Tips</h2>
+          <p class="small">Use Tab for quick indentation. Exporting as <strong>.doc</strong> makes a file Word can open later. For widest compatibility, keep fonts simple and avoid heavy styling.</p>
+        </div>
+      </aside>
+
+      <main class="card editor-shell">
+        <div class="toolbar">
+          <button class="btn" data-preset="scene">INT./EXT.</button>
+          <button class="btn" data-preset="action">Action</button>
+          <button class="btn" data-preset="character">Character</button>
+          <button class="btn" data-preset="dialogue">Dialogue</button>
+          <button class="btn" data-preset="parenthetical">(Beat)</button>
+          <button class="btn" data-preset="transition">CUT TO:</button>
+        </div>
+        <div class="document-stage">
+          <div id="editor" class="page" contenteditable="true" spellcheck="true"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const editor = document.getElementById('editor');
+    const statusEl = document.getElementById('status');
+    const docTitle = document.getElementById('docTitle');
+
+    const defaultContent = `Title: UNTITLED SCREENPLAY\nWritten by\nYour Name\n\nFADE IN:\n\nINT. APARTMENT - NIGHT\n\nA cluttered room. A blinking cursor waits on a page.\n\nWRITER\n(quietly)\nLet's see what happens.\n`;
+
+    const presets = {
+      scene: { text: 'INT. LOCATION - DAY', indent: 0, uppercase: true },
+      action: { text: 'Describe what we see.', indent: 0, uppercase: false },
+      character: { text: 'CHARACTER NAME', indent: 24, uppercase: true },
+      dialogue: { text: 'Dialogue goes here.', indent: 12, uppercase: false },
+      parenthetical: { text: '(beat)', indent: 18, uppercase: false },
+      transition: { text: 'CUT TO:', indent: 38, uppercase: true }
+    };
+
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function indentText(text, spaces) {
+      return ' '.repeat(spaces) + text;
+    }
+
+    function insertPreset(type) {
+      const preset = presets[type];
+      if (!preset) return;
+      editor.focus();
+
+      const text = preset.uppercase ? preset.text.toUpperCase() : preset.text;
+      const value = '\n' + indentText(text, preset.indent) + '\n';
+      document.execCommand('insertText', false, value);
+      setStatus(type.charAt(0).toUpperCase() + type.slice(1) + ' inserted.');
+      autoSave();
+    }
+
+    function exportDoc() {
+      const title = (docTitle.value || 'screenplay').trim().replace(/[\\/:*?"<>|]+/g, '');
+      const html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:w="urn:schemas-microsoft-com:office:word"
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <title>${escapeHtml(title)}</title>
+          <!--[if gte mso 9]>
+          <xml>
+            <w:WordDocument>
+              <w:View>Print</w:View>
+              <w:Zoom>100</w:Zoom>
+              <w:DoNotOptimizeForBrowser/>
+            </w:WordDocument>
+          </xml>
+          <![endif]-->
+          <style>
+            @page { size: 8.5in 11in; margin: 1in 1in 1in 1.5in; }
+            body {
+              font-family: "Courier New", monospace;
+              font-size: 12pt;
+              line-height: 1;
+              white-space: pre-wrap;
+            }
+          </style>
+        </head>
+        <body>${editor.innerHTML}</body>
+        </html>`;
+
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title || 'screenplay'}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('Word-compatible .doc exported.');
+    }
+
+    function exportTxt() {
+      const title = (docTitle.value || 'screenplay').trim().replace(/[\\/:*?"<>|]+/g, '');
+      const blob = new Blob([editor.innerText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title || 'screenplay'}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('.txt exported.');
+    }
+
+    function autoSave() {
+      localStorage.setItem('screenplay_writer_content', editor.innerHTML);
+      localStorage.setItem('screenplay_writer_title', docTitle.value);
+      localStorage.setItem('screenplay_writer_saved_at', new Date().toISOString());
+    }
+
+    function loadSaved() {
+      const savedContent = localStorage.getItem('screenplay_writer_content');
+      const savedTitle = localStorage.getItem('screenplay_writer_title');
+      const savedAt = localStorage.getItem('screenplay_writer_saved_at');
+
+      if (savedContent) {
+        editor.innerHTML = savedContent;
+        if (savedTitle) docTitle.value = savedTitle;
+        setStatus(savedAt ? `Draft loaded. Last saved ${new Date(savedAt).toLocaleString()}.` : 'Draft loaded.');
+      } else {
+        setStatus('No saved draft found in this browser.');
+      }
+    }
+
+    function clearFormatting() {
+      editor.focus();
+      document.execCommand('removeFormat', false, null);
+      setStatus('Inline formatting cleared from selection.');
+      autoSave();
+    }
+
+    function init() {
+      const saved = localStorage.getItem('screenplay_writer_content');
+      const savedTitle = localStorage.getItem('screenplay_writer_title');
+      editor.innerText = '';
+
+      if (saved) {
+        editor.innerHTML = saved;
+        if (savedTitle) docTitle.value = savedTitle;
+        setStatus('Loaded saved draft from this browser.');
+      } else {
+        editor.innerText = defaultContent;
+      }
+    }
+
+    document.querySelectorAll('[data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => insertPreset(btn.dataset.preset));
+    });
+
+    document.getElementById('exportDoc').addEventListener('click', exportDoc);
+    document.getElementById('exportDocTop').addEventListener('click', exportDoc);
+    document.getElementById('downloadTxt').addEventListener('click', exportTxt);
+    document.getElementById('saveLocal').addEventListener('click', () => { autoSave(); setStatus('Saved in this browser.'); });
+    document.getElementById('loadLocal').addEventListener('click', loadSaved);
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+    document.getElementById('boldBtn').addEventListener('click', () => { editor.focus(); document.execCommand('bold'); autoSave(); });
+    document.getElementById('italicBtn').addEventListener('click', () => { editor.focus(); document.execCommand('italic'); autoSave(); });
+    document.getElementById('underlineBtn').addEventListener('click', () => { editor.focus(); document.execCommand('underline'); autoSave(); });
+    document.getElementById('clearFormatting').addEventListener('click', clearFormatting);
+
+    editor.addEventListener('input', autoSave);
+    docTitle.addEventListener('input', autoSave);
+
+    editor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        document.execCommand('insertText', false, '    ');
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
